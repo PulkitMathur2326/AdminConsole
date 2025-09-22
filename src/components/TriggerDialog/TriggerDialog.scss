@@ -1,0 +1,77 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+ 
+.dialog {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+ 
+  h2 {
+    margin-bottom: 1.25rem;
+  }
+ 
+  .form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+ 
+    label {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+ 
+    input,
+    select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+  }
+ 
+  .radio-group {
+    display: flex;
+    gap: 1.25rem;
+ 
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+  }
+ 
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+ 
+    .cancel-btn {
+      background: #ccc;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+ 
+    .save-btn {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+ 
+      &:hover {
+        background: #125ca1;
+      }
+    }
+  }
+}

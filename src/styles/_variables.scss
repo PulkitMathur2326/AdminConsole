@@ -1,0 +1,18 @@
+$app-bg: #f5f5f5;
+ 
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: $app-bg;
+}
+ 
+.main-layout {
+  display: flex;
+  flex: 1;
+}
+ 
+.content-area {
+  flex: 1;
+  padding: 20px;
+}

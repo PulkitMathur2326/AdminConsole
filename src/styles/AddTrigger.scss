@@ -1,0 +1,22 @@
+.add-trigger {
+  padding: 1.25rem;
+ 
+  h2 {
+    margin-bottom: 1rem;
+  }
+ 
+  .filters {
+    display: flex;
+    margin-bottom: 0.75rem;
+  }
+
+  th {
+    font-weight: bold;
+    background-color: #f5f5f5;
+  }
+
+  tr:hover {
+    background-color: #fafafa;
+    transition: background-color 0.2s ease;
+  }
+}
