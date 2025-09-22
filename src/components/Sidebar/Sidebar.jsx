@@ -12,6 +12,9 @@ const Sidebar = ({ isOpen }) => {
         <li>
           <Link to="/add-trigger">Add Trigger</Link>
         </li>
+        <li>
+          <Link to="/add-user">Add User</Link>
+        </li>
       </ul>
     </div>
   );

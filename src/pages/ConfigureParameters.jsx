@@ -23,7 +23,7 @@ const ConfigureParameters = () => {
     "Outlook Server": "e.g. server",
     "Jira Base URL": "e.g. https://baseurl.com",
     "Jira Email": "e.g. a@b.com",
-    "Jira API Token": "e.g. ejwhbhqwe823197Abjwe",
+    "Jira API Token": "e.g. ejwe823197Abjwe",
     dateField: "Select Date",
     dropdownField: "Select Priority",
   };
@@ -78,7 +78,7 @@ const ConfigureParameters = () => {
       <h2>Configure Parameters</h2>
       <form className="config-form">
         {/* First 8 text fields */}
-        {["Job Frequency", "Max Emails Per Batch", "Outlook Email", "Outlook Password", "Outlook Server", "Jira Base URL", "Jira Email", "Jira API Token"].map((field, idx) => (
+        {["Job Frequency", "Outlook Email", "Outlook Server", "Jira Base URL", "Jira Email", "Jira API Token"].map((field, idx) => (
           <div className="form-group" key={idx}>
             <div className="label-row">
               <label>{field.toUpperCase()}</label>
@@ -95,7 +95,7 @@ const ConfigureParameters = () => {
         ))}
 
         {/* Date Picker */}
-        <div className="form-group">
+        {/* <div className="form-group">
           <div className="label-row">
             <label>Received Date</label>
             {renderInfoIcon(descriptions.dateField)}
@@ -106,10 +106,10 @@ const ConfigureParameters = () => {
             value={formData.dateField}
             onChange={handleChange}
           />
-        </div>
+        </div> */}
 
         {/* Dropdown */}
-        <div className="form-group">
+        {/* <div className="form-group">
           <div className="label-row">
             <label>Priority</label>
             {renderInfoIcon(descriptions.dropdownField)}
@@ -124,7 +124,7 @@ const ConfigureParameters = () => {
             <option value="P2">P2</option>
             <option value="Informational">Informational</option>
           </select>
-        </div>
+        </div> */}
 
         {/* Buttons */}
         <div className="button-row">
