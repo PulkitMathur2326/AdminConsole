@@ -13,19 +13,19 @@ import {
   Select,
   MenuItem,
   TablePagination,
+  IconButton,
 } from "@mui/material";
+import { Edit, Delete } from "@mui/icons-material";
 import TriggerDialog from "../components/TriggerDialog/TriggerDialog";
 import "./../styles/AddTrigger.scss";
  
 /** sanitize a trigger row to enforce business rules */
 const sanitize = (r) => {
   const row = { ...r };
-  // type default
   row.type = row.type === "Actionable" ? "Actionable" : "Informational";
   if (row.type === "Informational") {
     row.priority = "Informational";
   } else {
-    // actionable -> only P1 or P2 allowed, default to P1
     if (!["P1", "P2"].includes(row.priority)) row.priority = "P1";
   }
   return row;
@@ -33,16 +33,45 @@ const sanitize = (r) => {
  
 export default function AddTrigger() {
   const seed = [
-    { trigger: "OI-RDA Machines: Disk Queue greater than or equal 1", category: "OI-RDA", type: "Actionable", priority: "P1" },
-    { trigger: "SAP-SW Machines: Computer Down ", category: "SAP", type: "Actionable", priority: "1" },
-    { trigger: "Linux Xterm Process Ended ", category: "Linux", type: "Informational", priority: "Informational" },
-    { trigger: "ADC Storefront LB restored", category: "ADC", type: "Informational", priority: "Informational" },
+    {
+      trigger: "OI-RDA Machines: Disk Queue greater than or equal 1",
+      category: "OI-RDA",
+      type: "Actionable",
+      priority: "P1",
+    },
+    {
+      trigger: "SAP-SW Machines: Computer Down ",
+      category: "SAP",
+      type: "Actionable",
+      priority: "P1", // was "1", fixed by sanitize
+    },
+    {
+      trigger: "Linux Xterm Process Ended ",
+      category: "Linux",
+      type: "Informational",
+      priority: "Informational",
+    },
+    {
+      trigger: "ADC Storefront LB restored",
+      category: "ADC",
+      type: "Informational",
+      priority: "Informational",
+    },
+    {
+      trigger: "CITRIX Machines: Less 5GB AND less 10 Percent",
+      category: "CITRIX",
+      type: "Actionable",
+      priority: "P2",
+    }
   ];
  
   const [triggers, setTriggers] = useState(() => seed.map(sanitize));
  
   // dialog state
   const [openDialog, setOpenDialog] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [dialogInitial, setDialogInitial] = useState(null);
+  const [error, setError] = useState("");
  
   // filters
   const [filterCategory, setFilterCategory] = useState("");
@@ -80,13 +109,56 @@ export default function AddTrigger() {
     if (page > maxPage) setPage(0);
   }, [filtered.length, rowsPerPage, page]);
  
-  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginated = filtered.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
  
+  /** Add or update trigger with validation */
   const handleDialogSave = (newRow) => {
     const sanitized = sanitize(newRow);
-    setTriggers((prev) => [sanitized, ...prev]); // add to top
-    // ensure page shows newest entry
-    setPage(0);
+ 
+    // duplicate check (trigger + category)
+    const duplicate = triggers.some(
+      (t, idx) =>
+        idx !== editingIndex &&
+        t.trigger.trim().toLowerCase() === sanitized.trigger.trim().toLowerCase() &&
+        t.category.trim().toLowerCase() === sanitized.category.trim().toLowerCase()
+    );
+ 
+    if (duplicate) {
+      setError("A trigger with this Trigger + Category already exists.");
+      return;
+    }
+ 
+    if (editingIndex !== null) {
+      const updated = [...triggers];
+      updated[editingIndex] = sanitized;
+      setTriggers(updated);
+      setEditingIndex(null);
+    } else {
+      setTriggers((prev) => [sanitized, ...prev]); // add new to top
+      setPage(0);
+    }
+ 
+    setDialogInitial(null);
+    setOpenDialog(false);
+    setError("");
+  };
+ 
+  const handleEdit = (index) => {
+    setEditingIndex(index);
+    setDialogInitial(triggers[index]);
+    setOpenDialog(true);
+    setError("");
+  };
+ 
+  const handleDelete = (index) => {
+    setTriggers((prev) => prev.filter((_, i) => i !== index));
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setDialogInitial(null);
+    }
   };
  
   return (
@@ -112,7 +184,11 @@ export default function AddTrigger() {
  
         <FormControl size="small" sx={{ minWidth: 160, mr: 2 }}>
           <InputLabel>Priority</InputLabel>
-          <Select value={filterPriority} label="Priority" onChange={(e) => setFilterPriority(e.target.value)}>
+          <Select
+            value={filterPriority}
+            label="Priority"
+            onChange={(e) => setFilterPriority(e.target.value)}
+          >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="P1">P1</MenuItem>
             <MenuItem value="P2">P2</MenuItem>
@@ -122,13 +198,23 @@ export default function AddTrigger() {
  
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>Type</InputLabel>
-          <Select value={filterType} label="Type" onChange={(e) => setFilterType(e.target.value)}>
+          <Select
+            value={filterType}
+            label="Type"
+            onChange={(e) => setFilterType(e.target.value)}
+          >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="Informational">Informational</MenuItem>
             <MenuItem value="Actionable">Actionable</MenuItem>
           </Select>
         </FormControl>
       </div>
+ 
+      {error && (
+        <p style={{ color: "red", marginTop: "8px", fontSize: "0.9rem" }}>
+          {error}
+        </p>
+      )}
  
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
@@ -138,6 +224,7 @@ export default function AddTrigger() {
               <TableCell>Category</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Priority</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
  
@@ -147,13 +234,27 @@ export default function AddTrigger() {
                 <TableCell>{row.trigger}</TableCell>
                 <TableCell>{row.category}</TableCell>
                 <TableCell>{row.type}</TableCell>
-                <TableCell>{row.type === "Informational" ? "Informational" : row.priority}</TableCell>
+                <TableCell>
+                  {row.type === "Informational"
+                    ? "Informational"
+                    : row.priority}
+                </TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleEdit(page * rowsPerPage + idx)}>
+                    <Edit />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDelete(page * rowsPerPage + idx)}
+                  >
+                    <Delete />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))}
  
             {paginated.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   No rows
                 </TableCell>
               </TableRow>
@@ -167,22 +268,39 @@ export default function AddTrigger() {
           page={page}
           onPageChange={(e, p) => setPage(p)}
           rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+          onRowsPerPageChange={(e) =>
+            setRowsPerPage(parseInt(e.target.value, 10))
+          }
           rowsPerPageOptions={[5, 10, 20]}
         />
       </TableContainer>
  
       <div style={{ marginTop: 16 }}>
-        <Button variant="contained" onClick={() => setOpenDialog(true)}>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setOpenDialog(true);
+            setEditingIndex(null);
+            setDialogInitial(null);
+            setError("");
+          }}
+        >
           Add Trigger
         </Button>
       </div>
  
       <TriggerDialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={() => {
+          setOpenDialog(false);
+          setEditingIndex(null);
+          setDialogInitial(null);
+          setError("");
+        }}
         onSave={handleDialogSave}
+        initialData={dialogInitial}
       />
     </div>
   );
 }
+ 
