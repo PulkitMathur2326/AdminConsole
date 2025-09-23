@@ -1,57 +1,89 @@
 import React, { useState } from "react";
-import { Button, TextField, Paper, Typography } from "@mui/material";
+import { Link } from "react-router-dom";
+import {
+  TextField,
+  Button,
+  IconButton,
+  InputAdornment
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import "./../styles/Login.scss";
  
-export default function Login({ onLogin }) {
+const Login = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
  
   const handleSubmit = (e) => {
     e.preventDefault();
+    const users = JSON.parse(sessionStorage.getItem("users")) || [];
+    const found = users.find(
+      (u) => u.username === username && u.password === password
+    );
  
-    // Simple hardcoded check (replace with backend later)
-    if (username === "admin" && password === "admin") {
-      onLogin(); // callback to parent
+    if (found) {
+      onLogin(found);
     } else {
-      alert("Invalid username or password");
+      setError("Invalid username or password");
     }
   };
  
   return (
-    <div className="login-page">
-      <Paper elevation={3} className="login-card">
-        <Typography variant="h5" gutterBottom>
-          Admin Console Login
-        </Typography>
-        <form onSubmit={handleSubmit} className="login-form">
+    <div className="login-container">
+      <div className="login-card">
+        <h2>Admin Console Login</h2>
+ 
+        {error && <p className="error-text">{error}</p>}
+ 
+        <form onSubmit={handleSubmit}>
           <TextField
-            label="Username"
-            variant="outlined"
             fullWidth
             margin="normal"
+            label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
           />
+ 
           <TextField
-            label="Password"
-            type="password"
-            variant="outlined"
             fullWidth
             margin="normal"
+            label="Password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
+ 
+          <div className="forgot-password">
+            <Link to="/reset-password">Forgot Password?</Link>
+          </div>
+ 
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             fullWidth
-            sx={{ mt: 2 }}
+            className="login-button"
           >
             Login
           </Button>
         </form>
-      </Paper>
+      </div>
     </div>
   );
-}
+};
+ 
+export default Login;

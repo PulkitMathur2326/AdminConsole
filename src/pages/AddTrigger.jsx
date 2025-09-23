@@ -14,11 +14,16 @@ import {
   MenuItem,
   TablePagination,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import TriggerDialog from "../components/TriggerDialog/TriggerDialog";
 import "./../styles/AddTrigger.scss";
-
+ 
 /** sanitize a trigger row to enforce business rules */
 const sanitize = (r) => {
   const row = { ...r };
@@ -30,7 +35,7 @@ const sanitize = (r) => {
   }
   return row;
 };
-
+ 
 export default function AddTrigger() {
   const seed = [
     {
@@ -62,32 +67,35 @@ export default function AddTrigger() {
       category: "CITRIX",
       type: "Actionable",
       priority: "P2",
-    }
+    },
   ];
-
+ 
   const [triggers, setTriggers] = useState(() => seed.map(sanitize));
-
+ 
   // dialog state
   const [openDialog, setOpenDialog] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [dialogInitial, setDialogInitial] = useState(null);
   const [error, setError] = useState("");
-
+ 
+  // delete confirmation
+  const [deleteIndex, setDeleteIndex] = useState(null);
+ 
   // filters
   const [filterCategory, setFilterCategory] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
   const [filterType, setFilterType] = useState("");
-
+ 
   // pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
+ 
   // Derived lists for filter dropdowns
   const categories = useMemo(
     () => Array.from(new Set(triggers.map((t) => t.category))).sort(),
     [triggers]
   );
-
+ 
   // Filtered & sanitized list
   const filtered = useMemo(() => {
     return triggers.filter((t) => {
@@ -98,26 +106,26 @@ export default function AddTrigger() {
       );
     });
   }, [triggers, filterCategory, filterPriority, filterType]);
-
-  // If filters/pages/rows changes and page is out of range, reset page to 0
+ 
+  // Reset page if filters change
   useEffect(() => {
     setPage(0);
   }, [filterCategory, filterPriority, filterType, rowsPerPage]);
-
+ 
   useEffect(() => {
     const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
     if (page > maxPage) setPage(0);
   }, [filtered.length, rowsPerPage, page]);
-
+ 
   const paginated = filtered.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
-
+ 
   /** Add or update trigger with validation */
   const handleDialogSave = (newRow) => {
     const sanitized = sanitize(newRow);
-
+ 
     // duplicate check (trigger + category)
     const duplicate = triggers.some(
       (t, idx) =>
@@ -125,15 +133,12 @@ export default function AddTrigger() {
         t.trigger.trim().toLowerCase() === sanitized.trigger.trim().toLowerCase() &&
         t.category.trim().toLowerCase() === sanitized.category.trim().toLowerCase()
     );
-
+ 
     if (duplicate) {
-      // Popup alert with trigger + category
-      alert(
-        `The trigger "${sanitized.trigger}" already exists in category "${sanitized.category}".`
-      );
+      setError("A trigger with this Trigger + Category already exists.");
       return;
     }
-
+ 
     if (editingIndex !== null) {
       const updated = [...triggers];
       updated[editingIndex] = sanitized;
@@ -143,31 +148,30 @@ export default function AddTrigger() {
       setTriggers((prev) => [sanitized, ...prev]); // add new to top
       setPage(0);
     }
-
+ 
     setDialogInitial(null);
     setOpenDialog(false);
     setError("");
   };
-
+ 
   const handleEdit = (index) => {
     setEditingIndex(index);
     setDialogInitial(triggers[index]);
     setOpenDialog(true);
     setError("");
   };
-
-  const handleDelete = (index) => {
-    setTriggers((prev) => prev.filter((_, i) => i !== index));
-    if (editingIndex === index) {
-      setEditingIndex(null);
-      setDialogInitial(null);
+ 
+  const handleDeleteConfirm = () => {
+    if (deleteIndex !== null) {
+      setTriggers((prev) => prev.filter((_, i) => i !== deleteIndex));
+      setDeleteIndex(null);
     }
   };
-
+ 
   return (
     <div className="add-trigger">
       <h2>Trigger List</h2>
-
+ 
       <div className="filters">
         <FormControl size="small" sx={{ minWidth: 160, mr: 2 }}>
           <InputLabel>Category</InputLabel>
@@ -184,7 +188,7 @@ export default function AddTrigger() {
             ))}
           </Select>
         </FormControl>
-
+ 
         <FormControl size="small" sx={{ minWidth: 160, mr: 2 }}>
           <InputLabel>Priority</InputLabel>
           <Select
@@ -198,7 +202,7 @@ export default function AddTrigger() {
             <MenuItem value="Informational">Informational</MenuItem>
           </Select>
         </FormControl>
-
+ 
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>Type</InputLabel>
           <Select
@@ -212,13 +216,13 @@ export default function AddTrigger() {
           </Select>
         </FormControl>
       </div>
-
+ 
       {error && (
         <p style={{ color: "red", marginTop: "8px", fontSize: "0.9rem" }}>
           {error}
         </p>
       )}
-
+ 
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
@@ -230,7 +234,7 @@ export default function AddTrigger() {
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
-
+ 
           <TableBody>
             {paginated.map((row, idx) => (
               <TableRow key={`${row.trigger}-${idx}-${row.category}`}>
@@ -247,14 +251,15 @@ export default function AddTrigger() {
                     <Edit />
                   </IconButton>
                   <IconButton
-                    onClick={() => handleDelete(page * rowsPerPage + idx)}
+                    onClick={() => setDeleteIndex(page * rowsPerPage + idx)}
+                    color="default"
                   >
                     <Delete />
                   </IconButton>
                 </TableCell>
               </TableRow>
             ))}
-
+ 
             {paginated.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
@@ -264,7 +269,7 @@ export default function AddTrigger() {
             )}
           </TableBody>
         </Table>
-
+ 
         <TablePagination
           component="div"
           count={filtered.length}
@@ -277,7 +282,7 @@ export default function AddTrigger() {
           rowsPerPageOptions={[5, 10, 20]}
         />
       </TableContainer>
-
+ 
       <div style={{ marginTop: 16 }}>
         <Button
           variant="contained"
@@ -291,7 +296,7 @@ export default function AddTrigger() {
           Add Trigger
         </Button>
       </div>
-
+ 
       <TriggerDialog
         open={openDialog}
         onClose={() => {
@@ -303,6 +308,27 @@ export default function AddTrigger() {
         onSave={handleDialogSave}
         initialData={dialogInitial}
       />
+ 
+      {/* Delete confirmation popup */}
+      <Dialog open={deleteIndex !== null} onClose={() => setDeleteIndex(null)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete trigger{" "}
+            <strong>
+              {deleteIndex !== null &&
+                `${triggers[deleteIndex].trigger} (${triggers[deleteIndex].category})`}
+            </strong>
+            ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteIndex(null)}>Cancel</Button>
+          <Button color="error" onClick={handleDeleteConfirm}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

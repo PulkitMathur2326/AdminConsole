@@ -2,19 +2,15 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./Sidebar.scss";
  
-const Sidebar = ({ isOpen }) => {
+const Sidebar = ({ isOpen, role }) => {
   return (
-    <div className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
+    <div className={`sidebar ${isOpen ? "open" : "closed"}`}>
       <ul>
-        <li>
-          <Link to="/configure">Configure Parameters</Link>
-        </li>
-        <li>
-          <Link to="/add-trigger">Add Trigger</Link>
-        </li>
-        <li>
-          <Link to="/add-user">Add User</Link>
-        </li>
+        <li><Link to="/configure">Configure Parameters</Link></li>
+        <li><Link to="/add-trigger">Add Trigger</Link></li>
+        {role === "Super Admin" && (
+          <li><Link to="/add-user">Add User</Link></li>
+        )}
       </ul>
     </div>
   );
