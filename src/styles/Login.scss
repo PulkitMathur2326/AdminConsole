@@ -54,3 +54,35 @@
   font-size: 1rem !important;
   border-radius: 8px !important;
 }
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: none;
+ 
+  &:hover {
+    text-decoration: underline;
+  }
+}
+ 
+.back-button {
+  margin-top: 0.75rem !important;
+  font-size: 0.9rem !important;
+  text-transform: none !important;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+ 
+.success-text {
+  color: green;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}

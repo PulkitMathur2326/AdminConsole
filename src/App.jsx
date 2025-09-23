@@ -1,109 +1,110 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate
 } from "react-router-dom";
-
+ 
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import ConfigureParameters from "./pages/ConfigureParameters";
 import AddTrigger from "./pages/AddTrigger";
 import AddUser from "./pages/AddUser";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import "./styles/App.scss";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const sidebarWidth = 220;
-
-  // Load users + loggedInUser from sessionStorage
-  useEffect(() => {
-    const storedUser = JSON.parse(sessionStorage.getItem("loggedInUser"));
-    if (storedUser) {
-      setIsLoggedIn(true);
-      setLoggedInUser(storedUser);
-    }
-
-    // initialize default users if none exist
-    const existing = JSON.parse(sessionStorage.getItem("users")) || [];
-    if (existing.length === 0) {
-      const defaultUsers = [
+ 
+   useEffect(() => {
+    // Seed only if users not already in sessionStorage
+    if (!sessionStorage.getItem("users")) {
+      const seedUsers = [
         {
           username: "admin",
-          email: "admin1@example.com",
-          role: "Admin",
-          password: "admin"
+          password: "admin",
+          email: "admin@example.com",
+          role: "Admin"
         },
         {
           username: "superadmin",
+          password: "superadmin",
           email: "superadmin@example.com",
-          role: "Super Admin",
-          password: "superadmin"
+          role: "Super Admin"
         }
       ];
-      sessionStorage.setItem("users", JSON.stringify(defaultUsers));
+      sessionStorage.setItem("users", JSON.stringify(seedUsers));
     }
   }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
-  const handleLogin = (user) => {
-    setIsLoggedIn(true);
-    setLoggedInUser(user);
-    sessionStorage.setItem("loggedInUser", JSON.stringify(user));
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setLoggedInUser(null);
-    sessionStorage.removeItem("loggedInUser");
-  };
-
+ 
+  const sidebarWidth = 220;
+ 
   return (
     <BrowserRouter>
-      {isLoggedIn && (
-        <Header
-          toggleSidebar={toggleSidebar}
-          isLoggedIn={isLoggedIn}
-          setIsLoggedIn={setIsLoggedIn}
-          onLogout={handleLogout}
-        />
-      )}
-
-      {isLoggedIn && (
-        <Sidebar isOpen={isSidebarOpen} role={loggedInUser?.role} />
-      )}
-
-      <div
-        style={{
-          marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0",
-          padding: "20px",
-          transition: "margin-left 0.3s ease"
-        }}
-      >
-        <Routes>
-          {!isLoggedIn ? (
-            <Route path="*" element={<Login onLogin={handleLogin} />} />
-          ) : (
-            <>
+      {isLoggedIn ? (
+        <>
+          <Header
+            toggleSidebar={toggleSidebar}
+            isLoggedIn={isLoggedIn}
+            setIsLoggedIn={setIsLoggedIn}
+          />
+          <Sidebar isOpen={isSidebarOpen} role={loggedInUser?.role} />
+          <div
+            style={{
+              marginTop: "60px",
+              marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0",
+              padding: "20px",
+              transition: "margin-left 0.3s ease"
+            }}
+          >
+            <Routes>
               <Route path="/" element={<Navigate to="/configure" replace />} />
               <Route path="/configure" element={<ConfigureParameters />} />
               <Route path="/add-trigger" element={<AddTrigger />} />
-              {loggedInUser?.role === "Super Admin" && (
-                <Route path="/add-user" element={<AddUser />} />
-              )}
-            </>
-          )}
+ 
+              {/* Only Super Admin can access AddUser */}
+              <Route
+                path="/add-user"
+                element={
+                  loggedInUser?.role === "Super Admin" ? (
+                    <AddUser />
+                  ) : (
+                    <Navigate to="/configure" replace />
+                  )
+                }
+              />
+ 
+              <Route path="*" element={<Navigate to="/configure" replace />} />
+            </Routes>
+          </div>
+        </>
+      ) : (
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <Login
+                onLogin={(user) => {
+                  setIsLoggedIn(true);
+                  setLoggedInUser(user);
+                }}
+              />
+            }
+          />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </div>
+      )}
     </BrowserRouter>
   );
 }
-
+ 
 export default App;
