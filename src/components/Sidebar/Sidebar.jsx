@@ -4,7 +4,7 @@ import "./Sidebar.scss";
  
 const Sidebar = ({ isOpen, role }) => {
   return (
-    <div className={`sidebar ${isOpen ? "open" : "closed"}`}>
+    <div className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
       <ul>
         <li><Link to="/configure">Configure Parameters</Link></li>
         <li><Link to="/add-trigger">Add Trigger</Link></li>

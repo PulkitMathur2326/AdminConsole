@@ -13,12 +13,13 @@ import AddTrigger from "./pages/AddTrigger";
 import AddUser from "./pages/AddUser";
 import Login from "./pages/Login";
 import "./styles/App.scss";
- 
+
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
- 
+  const sidebarWidth = 220;
+
   // Load users + loggedInUser from sessionStorage
   useEffect(() => {
     const storedUser = JSON.parse(sessionStorage.getItem("loggedInUser"));
@@ -26,7 +27,7 @@ function App() {
       setIsLoggedIn(true);
       setLoggedInUser(storedUser);
     }
- 
+
     // initialize default users if none exist
     const existing = JSON.parse(sessionStorage.getItem("users")) || [];
     if (existing.length === 0) {
@@ -47,23 +48,23 @@ function App() {
       sessionStorage.setItem("users", JSON.stringify(defaultUsers));
     }
   }, []);
- 
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
- 
+
   const handleLogin = (user) => {
     setIsLoggedIn(true);
     setLoggedInUser(user);
     sessionStorage.setItem("loggedInUser", JSON.stringify(user));
   };
- 
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setLoggedInUser(null);
     sessionStorage.removeItem("loggedInUser");
   };
- 
+
   return (
     <BrowserRouter>
       {isLoggedIn && (
@@ -74,14 +75,14 @@ function App() {
           onLogout={handleLogout}
         />
       )}
- 
+
       {isLoggedIn && (
         <Sidebar isOpen={isSidebarOpen} role={loggedInUser?.role} />
       )}
- 
+
       <div
         style={{
-          marginLeft: isLoggedIn && isSidebarOpen ? "220px" : "0",
+          marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0",
           padding: "20px",
           transition: "margin-left 0.3s ease"
         }}
@@ -104,5 +105,5 @@ function App() {
     </BrowserRouter>
   );
 }
- 
+
 export default App;
