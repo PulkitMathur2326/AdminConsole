@@ -5,7 +5,7 @@ import {
   Route,
   Navigate
 } from "react-router-dom";
- 
+
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import ConfigureParameters from "./pages/ConfigureParameters";
@@ -19,8 +19,8 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
- 
-   useEffect(() => {
+
+  useEffect(() => {
     // Seed only if users not already in sessionStorage
     if (!sessionStorage.getItem("users")) {
       const seedUsers = [
@@ -44,9 +44,9 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
- 
+
   const sidebarWidth = 220;
- 
+
   return (
     <BrowserRouter>
       {isLoggedIn ? (
@@ -55,6 +55,21 @@ function App() {
             toggleSidebar={toggleSidebar}
             isLoggedIn={isLoggedIn}
             setIsLoggedIn={setIsLoggedIn}
+            currentUser={loggedInUser}
+            updateUserPassword={(newPwd) => {
+              if (!loggedInUser) return;
+
+              const updated = { ...loggedInUser, password: newPwd };
+              setLoggedInUser(updated);
+
+              // update users list in sessionStorage
+              const users = JSON.parse(sessionStorage.getItem("users")) || [];
+              const idx = users.findIndex((u) => u.username === updated.username);
+              if (idx !== -1) {
+                users[idx] = updated;
+                sessionStorage.setItem("users", JSON.stringify(users));
+              }
+            }}
           />
           <Sidebar isOpen={isSidebarOpen} role={loggedInUser?.role} />
           <div
@@ -69,7 +84,7 @@ function App() {
               <Route path="/" element={<Navigate to="/configure" replace />} />
               <Route path="/configure" element={<ConfigureParameters />} />
               <Route path="/add-trigger" element={<AddTrigger />} />
- 
+
               {/* Only Super Admin can access AddUser */}
               <Route
                 path="/add-user"
@@ -81,7 +96,7 @@ function App() {
                   )
                 }
               />
- 
+
               <Route path="*" element={<Navigate to="/configure" replace />} />
             </Routes>
           </div>
@@ -93,6 +108,7 @@ function App() {
             element={
               <Login
                 onLogin={(user) => {
+                  console.log("App onLogin user:", user)
                   setIsLoggedIn(true);
                   setLoggedInUser(user);
                 }}
@@ -106,5 +122,5 @@ function App() {
     </BrowserRouter>
   );
 }
- 
+
 export default App;
