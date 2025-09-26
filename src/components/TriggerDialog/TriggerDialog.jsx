@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,8 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
   Select,
   MenuItem,
   RadioGroup,
@@ -15,126 +13,103 @@ import {
   Radio,
 } from "@mui/material";
  
-/**
- * Props:
- *  - open (bool)
- *  - onClose (fn)
- *  - onSave (fn) -> receives { trigger, category, type, priority }
- *  - initialData (optional) -> to prefill when editing (not required here)
- */
-export default function TriggerDialog({ open, onClose, onSave, initialData = null }) {
-  const [trigger, setTrigger] = useState("");
-  const [category, setCategory] = useState("");
-  const [type, setType] = useState("Informational");
-  const [priority, setPriority] = useState("Informational");
+const TriggerDialog = ({ open, onClose, onSave, initialData }) => {
+  const [formData, setFormData] = useState({
+    trigger: "",
+    category: "",
+    type: "Informational",
+    priority: "Informational",
+    state: "Enabled",
+  });
  
-  // Initialize fields whenever dialog opens (or when initialData changes)
   useEffect(() => {
-    if (open) {
-      setTrigger(initialData?.trigger ?? "");
-      setCategory(initialData?.category ?? "");
-      const initType = initialData?.type ?? "Informational";
-      setType(initType);
-      if (initType === "Informational") {
-        setPriority("Informational");
-      } else {
-        // default actionable priority to P1 if not provided
-        setPriority(initialData?.priority ?? "P1");
-      }
+    if (initialData) {
+      setFormData(initialData);
     }
-  }, [open, initialData]);
+  }, [initialData]);
  
-  // Enforce business rule when type changes
-  useEffect(() => {
-    if (type === "Informational") {
-      setPriority("Informational");
-    } else {
-      // if previously informational, set P1 as default; otherwise keep current if valid
-      if (priority === "Informational" || !priority) setPriority("P1");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type]);
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "type" && value === "Informational"
+        ? { priority: "Informational" }
+        : {}),
+    }));
+  };
  
-  const handleSave = () => {
-    if (!trigger.trim() || !category.trim()) {
-      alert("Please provide both Trigger and Category.");
-      return;
-    }
- 
-    const finalPriority = type === "Informational" ? "Informational" : priority;
-    if (type === "Actionable" && !["P1", "P2"].includes(finalPriority)) {
-      alert("Please select a valid priority (P1 or P2) for Actionable type.");
-      return;
-    }
- 
-    const newRow = {
-      trigger: trigger.trim(),
-      category: category.trim(),
-      type,
-      priority: finalPriority,
-    };
- 
-    onSave(newRow);
-    onClose();
+  const handleSubmit = () => {
+    onSave(formData);
   };
  
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add Trigger</DialogTitle>
+    <Dialog open={open} onClose={onClose} fullWidth>
+      <DialogTitle>{initialData ? "Edit Trigger" : "Add Trigger"}</DialogTitle>
       <DialogContent>
         <TextField
-          margin="dense"
-          label="Trigger"
           fullWidth
-          value={trigger}
-          onChange={(e) => setTrigger(e.target.value)}
+          margin="normal"
+          label="Trigger"
+          value={formData.trigger}
+          onChange={(e) => handleChange("trigger", e.target.value)}
         />
         <TextField
-          margin="dense"
-          label="Category"
           fullWidth
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          margin="normal"
+          label="Category"
+          value={formData.category}
+          onChange={(e) => handleChange("category", e.target.value)}
         />
  
-        <FormControl component="fieldset" margin="dense" sx={{ marginTop: 1 }}>
-          <RadioGroup row value={type} onChange={(e) => setType(e.target.value)}>
-            <FormControlLabel value="Informational" control={<Radio />} label="Informational" />
-            <FormControlLabel value="Actionable" control={<Radio />} label="Actionable" />
-          </RadioGroup>
-        </FormControl>
- 
-        {type === "Actionable" ? (
-          <FormControl fullWidth margin="dense" sx={{ marginTop: 1 }}>
-            <InputLabel>Priority</InputLabel>
-            <Select
-              value={priority}
-              label="Priority"
-              onChange={(e) => setPriority(e.target.value)}
-            >
-              <MenuItem value="P1">P1</MenuItem>
-              <MenuItem value="P2">P2</MenuItem>
-            </Select>
-          </FormControl>
-        ) : (
-          // show disabled Priority so user sees the implied value
-          <TextField
-            margin="dense"
-            label="Priority"
+        {/* Type radio */}
+        <RadioGroup
+          row
+          value={formData.type}
+          onChange={(e) => handleChange("type", e.target.value)}
+        >
+          <FormControlLabel
             value="Informational"
-            fullWidth
-            disabled
-            sx={{ marginTop: 1 }}
+            control={<Radio />}
+            label="Informational"
           />
-        )}
-      </DialogContent>
+          <FormControlLabel
+            value="Actionable"
+            control={<Radio />}
+            label="Actionable"
+          />
+        </RadioGroup>
  
+        {/* Priority only if Actionable */}
+        {formData.type === "Actionable" && (
+          <Select
+            fullWidth
+            margin="normal"
+            value={formData.priority}
+            onChange={(e) => handleChange("priority", e.target.value)}
+          >
+            <MenuItem value="P1">P1</MenuItem>
+            <MenuItem value="P2">P2</MenuItem>
+          </Select>
+        )}
+ 
+        {/* State radio */}
+        <RadioGroup
+          row
+          value={formData.state}
+          onChange={(e) => handleChange("state", e.target.value)}
+        >
+          <FormControlLabel value="Enabled" control={<Radio />} label="Enabled" />
+          <FormControlLabel value="Disabled" control={<Radio />} label="Disabled" />
+        </RadioGroup>
+      </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave}>
+        <Button onClick={handleSubmit} variant="contained">
           Save
         </Button>
       </DialogActions>
     </Dialog>
   );
-}
+};
+ 
+export default TriggerDialog;

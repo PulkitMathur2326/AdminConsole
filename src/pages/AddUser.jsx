@@ -18,7 +18,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
-import { Delete, Edit, Save, Close } from "@mui/icons-material";
+import { Delete, Edit, Save, Close, Visibility, VisibilityOff } from "@mui/icons-material";
 import "./../styles/AddUser.scss";
  
 export default function AddUser() {
@@ -27,6 +27,7 @@ export default function AddUser() {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editRowData, setEditRowData] = useState({});
   const [deleteIndex, setDeleteIndex] = useState(null);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
  
   // load users from sessionStorage
   useEffect(() => {
@@ -43,7 +44,6 @@ export default function AddUser() {
   const handleAdd = () => {
     if (!formData.username || !formData.email) return;
  
-    // unique email validation
     const emailExists = users.some(
       (u) => u.email.trim().toLowerCase() === formData.email.trim().toLowerCase()
     );
@@ -54,7 +54,7 @@ export default function AddUser() {
  
     const newUser = {
       ...formData,
-      password: formData.role === "Super Admin" ? "superadmin" : "admin"
+      password: formData.role === "Super Admin" ? "superadmin" : "admin",
     };
  
     const updated = [newUser, ...users];
@@ -62,15 +62,12 @@ export default function AddUser() {
     setFormData({ username: "", email: "", role: "Admin" });
   };
  
-  /** Start editing */
   const handleEdit = (idx) => {
     setEditingIndex(idx);
     setEditRowData(users[idx]);
   };
  
-  /** Save edited row */
   const handleSaveEdit = (idx) => {
-    // unique email check
     const emailExists = users.some(
       (u, i) =>
         i !== idx &&
@@ -87,13 +84,11 @@ export default function AddUser() {
     setEditingIndex(null);
   };
  
-  /** Cancel inline edit */
   const handleCancelEdit = () => {
     setEditingIndex(null);
     setEditRowData({});
   };
  
-  /** Delete confirm */
   const handleDeleteConfirm = () => {
     if (deleteIndex !== null) {
       const updated = users.filter((_, i) => i !== deleteIndex);
@@ -102,11 +97,18 @@ export default function AddUser() {
     }
   };
  
+  const togglePasswordVisibility = (idx) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [idx]: !prev[idx],
+    }));
+  };
+ 
   return (
     <div className="add-user">
       <h2>Add / Manage Users</h2>
  
-      {/* Add form above table */}
+      {/* Add form */}
       <div className="add-user-form">
         <TextField
           size="small"
@@ -141,6 +143,7 @@ export default function AddUser() {
           <TableHead>
             <TableRow>
               <TableCell className="header-cell">Username</TableCell>
+              <TableCell className="header-cell">Password</TableCell>
               <TableCell className="header-cell">Email</TableCell>
               <TableCell className="header-cell">Role</TableCell>
               <TableCell className="header-cell" align="right">
@@ -154,6 +157,20 @@ export default function AddUser() {
                 {editingIndex === idx ? (
                   <>
                     <TableCell>{u.username}</TableCell>
+                    {/* Password column - masked */}
+                    <TableCell>
+                      {visiblePasswords[idx] ? u.password : "••••••"}
+                      <IconButton
+                        size="small"
+                        onClick={() => togglePasswordVisibility(idx)}
+                      >
+                        {visiblePasswords[idx] ? (
+                          <VisibilityOff fontSize="small" />
+                        ) : (
+                          <Visibility fontSize="small" />
+                        )}
+                      </IconButton>
+                    </TableCell>
                     <TableCell>
                       <TextField
                         size="small"
@@ -188,6 +205,19 @@ export default function AddUser() {
                 ) : (
                   <>
                     <TableCell>{u.username}</TableCell>
+                    <TableCell>
+                      {visiblePasswords[idx] ? u.password : "••••••"}
+                      <IconButton
+                        size="small"
+                        onClick={() => togglePasswordVisibility(idx)}
+                      >
+                        {visiblePasswords[idx] ? (
+                          <VisibilityOff fontSize="small" />
+                        ) : (
+                          <Visibility fontSize="small" />
+                        )}
+                      </IconButton>
+                    </TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.role}</TableCell>
                     <TableCell align="right">
@@ -209,7 +239,7 @@ export default function AddUser() {
  
             {users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   No users
                 </TableCell>
               </TableRow>

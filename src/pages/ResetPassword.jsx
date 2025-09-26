@@ -88,7 +88,6 @@ const ResetPassword = () => {
         {success && <p className="success-text">{success}</p>}
  
         <form onSubmit={handleSubmit}>
-          {/* ✅ Password rules moved above fields */}
           <div style={{ marginBottom: "0.5rem" }}>
             {renderRule(validations.length, "At least 8 characters")}
             {renderRule(validations.uppercase, "At least one uppercase letter")}
@@ -141,7 +140,6 @@ const ResetPassword = () => {
             }}
           />
  
-          {/* ✅ Error shown below fields */}
           {error && <p className="error-text">{error}</p>}
  
           <Button

@@ -14,17 +14,11 @@ import {
   MenuItem,
   TablePagination,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { Edit } from "@mui/icons-material";
 import TriggerDialog from "../components/TriggerDialog/TriggerDialog";
 import "./../styles/AddTrigger.scss";
  
-/** sanitize a trigger row to enforce business rules */
 const sanitize = (r) => {
   const row = { ...r };
   row.type = row.type === "Actionable" ? "Actionable" : "Informational";
@@ -33,6 +27,7 @@ const sanitize = (r) => {
   } else {
     if (!["P1", "P2"].includes(row.priority)) row.priority = "P1";
   }
+  row.state = row.state === "Disabled" ? "Disabled" : "Enabled";
   return row;
 };
  
@@ -43,74 +38,67 @@ export default function AddTrigger() {
       category: "OI-RDA",
       type: "Actionable",
       priority: "P1",
+      state: "Enabled",
     },
     {
       trigger: "SAP-SW Machines: Computer Down ",
       category: "SAP",
       type: "Actionable",
-      priority: "P1", // was "1", fixed by sanitize
+      priority: "P1",
+      state: "Enabled",
     },
     {
       trigger: "Linux Xterm Process Ended ",
       category: "Linux",
       type: "Informational",
       priority: "Informational",
+      state: "Disabled",
     },
     {
       trigger: "ADC Storefront LB restored",
       category: "ADC",
       type: "Informational",
       priority: "Informational",
-    },
-    {
-      trigger: "CITRIX Machines: Less 5GB AND less 10 Percent",
-      category: "CITRIX",
-      type: "Actionable",
-      priority: "P2",
+      state: "Enabled",
     },
   ];
  
   const [triggers, setTriggers] = useState(() => seed.map(sanitize));
  
-  // dialog state
   const [openDialog, setOpenDialog] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [dialogInitial, setDialogInitial] = useState(null);
   const [error, setError] = useState("");
  
-  // delete confirmation
-  const [deleteIndex, setDeleteIndex] = useState(null);
- 
   // filters
   const [filterCategory, setFilterCategory] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterState, setFilterState] = useState("");
  
   // pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
  
-  // Derived lists for filter dropdowns
   const categories = useMemo(
     () => Array.from(new Set(triggers.map((t) => t.category))).sort(),
     [triggers]
   );
  
-  // Filtered & sanitized list
   const filtered = useMemo(() => {
     return triggers.filter((t) => {
       return (
         (filterCategory ? t.category === filterCategory : true) &&
         (filterPriority ? t.priority === filterPriority : true) &&
-        (filterType ? t.type === filterType : true)
+        (filterType ? t.type === filterType : true) &&
+        (filterState ? t.state === filterState : true)
       );
     });
-  }, [triggers, filterCategory, filterPriority, filterType]);
+  }, [triggers, filterCategory, filterPriority, filterType, filterState]);
  
-  // Reset page if filters change
   useEffect(() => {
     setPage(0);
-  }, [filterCategory, filterPriority, filterType, rowsPerPage]);
+  }, [filterCategory, filterPriority, filterType, filterState, rowsPerPage]);
  
   useEffect(() => {
     const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
@@ -122,11 +110,8 @@ export default function AddTrigger() {
     page * rowsPerPage + rowsPerPage
   );
  
-  /** Add or update trigger with validation */
   const handleDialogSave = (newRow) => {
     const sanitized = sanitize(newRow);
- 
-    // duplicate check (trigger + category)
     const duplicate = triggers.some(
       (t, idx) =>
         idx !== editingIndex &&
@@ -145,7 +130,7 @@ export default function AddTrigger() {
       setTriggers(updated);
       setEditingIndex(null);
     } else {
-      setTriggers((prev) => [sanitized, ...prev]); // add new to top
+      setTriggers((prev) => [sanitized, ...prev]);
       setPage(0);
     }
  
@@ -161,13 +146,6 @@ export default function AddTrigger() {
     setError("");
   };
  
-  const handleDeleteConfirm = () => {
-    if (deleteIndex !== null) {
-      setTriggers((prev) => prev.filter((_, i) => i !== deleteIndex));
-      setDeleteIndex(null);
-    }
-  };
- 
   return (
     <div className="add-trigger">
       <h2>Trigger List</h2>
@@ -177,7 +155,6 @@ export default function AddTrigger() {
           <InputLabel>Category</InputLabel>
           <Select
             value={filterCategory}
-            label="Category"
             onChange={(e) => setFilterCategory(e.target.value)}
           >
             <MenuItem value="">All</MenuItem>
@@ -193,7 +170,6 @@ export default function AddTrigger() {
           <InputLabel>Priority</InputLabel>
           <Select
             value={filterPriority}
-            label="Priority"
             onChange={(e) => setFilterPriority(e.target.value)}
           >
             <MenuItem value="">All</MenuItem>
@@ -203,16 +179,28 @@ export default function AddTrigger() {
           </Select>
         </FormControl>
  
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ minWidth: 160, mr: 2 }}>
           <InputLabel>Type</InputLabel>
           <Select
             value={filterType}
-            label="Type"
             onChange={(e) => setFilterType(e.target.value)}
           >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="Informational">Informational</MenuItem>
             <MenuItem value="Actionable">Actionable</MenuItem>
+          </Select>
+        </FormControl>
+ 
+        {/* ✅ State filter */}
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel>State</InputLabel>
+          <Select
+            value={filterState}
+            onChange={(e) => setFilterState(e.target.value)}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="Enabled">Enabled</MenuItem>
+            <MenuItem value="Disabled">Disabled</MenuItem>
           </Select>
         </FormControl>
       </div>
@@ -231,6 +219,7 @@ export default function AddTrigger() {
               <TableCell>Category</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Priority</TableCell>
+              <TableCell>State</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -246,15 +235,10 @@ export default function AddTrigger() {
                     ? "Informational"
                     : row.priority}
                 </TableCell>
+                <TableCell>{row.state}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleEdit(page * rowsPerPage + idx)}>
                     <Edit />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => setDeleteIndex(page * rowsPerPage + idx)}
-                    color="default"
-                  >
-                    <Delete />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -262,7 +246,7 @@ export default function AddTrigger() {
  
             {paginated.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   No rows
                 </TableCell>
               </TableRow>
@@ -308,27 +292,6 @@ export default function AddTrigger() {
         onSave={handleDialogSave}
         initialData={dialogInitial}
       />
- 
-      {/* Delete confirmation popup */}
-      <Dialog open={deleteIndex !== null} onClose={() => setDeleteIndex(null)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete trigger{" "}
-            <strong>
-              {deleteIndex !== null &&
-                `${triggers[deleteIndex].trigger} (${triggers[deleteIndex].category})`}
-            </strong>
-            ?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteIndex(null)}>Cancel</Button>
-          <Button color="error" onClick={handleDeleteConfirm}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </div>
   );
 }

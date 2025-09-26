@@ -31,6 +31,7 @@ const Login = ({ onLogin }) => {
     );
  
     if (found) {
+      console.log("Login found user:", found)
       onLogin(found);
     } else {
       setError("Invalid username or password");

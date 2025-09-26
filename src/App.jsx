@@ -20,6 +20,22 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
+  const updateUserPassword = (newPwd) => {
+    if (!loggedInUser) return;
+
+    // update logged-in user state
+    const updatedUser = { ...loggedInUser, password: newPwd };
+    setLoggedInUser(updatedUser);
+
+    // also update the sessionStorage users list
+    const users = JSON.parse(sessionStorage.getItem("users")) || [];
+    const idx = users.findIndex((u) => u.username === updatedUser.username);
+    if (idx !== -1) {
+      users[idx] = updatedUser;
+      sessionStorage.setItem("users", JSON.stringify(users));
+    }
+  };
+
   useEffect(() => {
     // Seed only if users not already in sessionStorage
     if (!sessionStorage.getItem("users")) {
@@ -56,20 +72,7 @@ function App() {
             isLoggedIn={isLoggedIn}
             setIsLoggedIn={setIsLoggedIn}
             currentUser={loggedInUser}
-            updateUserPassword={(newPwd) => {
-              if (!loggedInUser) return;
-
-              const updated = { ...loggedInUser, password: newPwd };
-              setLoggedInUser(updated);
-
-              // update users list in sessionStorage
-              const users = JSON.parse(sessionStorage.getItem("users")) || [];
-              const idx = users.findIndex((u) => u.username === updated.username);
-              if (idx !== -1) {
-                users[idx] = updated;
-                sessionStorage.setItem("users", JSON.stringify(users));
-              }
-            }}
+            updateUserPassword={updateUserPassword}
           />
           <Sidebar isOpen={isSidebarOpen} role={loggedInUser?.role} />
           <div
